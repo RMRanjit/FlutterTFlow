@@ -23,8 +23,10 @@ class Inference {
 
 /// A momentary occurrence (wave, jump, nod...) shown in the activity log.
 class MovementEvent {
-  const MovementEvent(this.at, this.label, {this.severity = Severity.info});
+  const MovementEvent(this.at, this.label, {this.severity = Severity.info, this.id});
 
+  /// Stable machine id (e.g. `wave`), when the event has one.
+  final String? id;
   final DateTime at;
   final String label;
   final Severity severity;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../analysis/inference.dart';
+import '../demo/challenges.dart';
 import '../session_controller.dart';
 
 /// Live explanation of what the models see: current states, alerts, stats and
@@ -45,13 +46,16 @@ class InsightsPanel extends StatelessWidget {
                 ),
                 child: r.personVisible ? _states(context, r) : const Text('Waiting for a person to appear…'),
               ),
+              _ChallengeCard(session: session),
               _Card(title: 'Activity level', child: _ActivityMeter(level: r.activityLevel)),
-              _Card(title: 'Model stats', child: _stats(context)),
-              _Card(
-                title: 'Recent activity',
-                trailing: session.log.isEmpty ? null : TextButton(onPressed: session.clearLog, child: const Text('Clear')),
-                child: _Log(entries: session.log),
-              ),
+              if (session.showDetails) ...[
+                _Card(title: 'Model stats', child: _stats(context)),
+                _Card(
+                  title: 'Recent activity',
+                  trailing: session.log.isEmpty ? null : TextButton(onPressed: session.clearLog, child: const Text('Clear')),
+                  child: _Log(entries: session.log),
+                ),
+              ],
             ],
           ],
         );
@@ -249,6 +253,68 @@ class _Log extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _ChallengeCard extends StatelessWidget {
+  const _ChallengeCard({required this.session});
+
+  final SessionController session;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = session.tracker;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return _Card(
+      title: t.allDone ? 'All done – nicely moved! 🎉' : 'Try these in front of the camera  (${t.completed}/${t.total})',
+      trailing: t.completed == 0 ? null : TextButton(onPressed: session.resetChallenges, child: const Text('Reset')),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(borderRadius: BorderRadius.circular(6), child: LinearProgressIndicator(value: t.total == 0 ? 0 : t.completed / t.total, minHeight: 6)),
+          const SizedBox(height: 8),
+          for (var i = 0; i < t.total; i++) _ChallengeRow(challenge: t.challenges[i], done: t.isDone(i), scheme: scheme),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChallengeRow extends StatelessWidget {
+  const _ChallengeRow({required this.challenge, required this.done, required this.scheme});
+
+  final Challenge challenge;
+  final bool done;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      label: '${challenge.title}: ${done ? 'completed' : 'not yet'}',
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        margin: const EdgeInsets.only(top: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(color: done ? scheme.primaryContainer : Colors.transparent, borderRadius: BorderRadius.circular(10)),
+        child: Row(
+          children: [
+            Icon(done ? Icons.check_circle : challenge.icon, color: done ? scheme.primary : scheme.onSurfaceVariant),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(challenge.title, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                  if (!done) Text(challenge.hint, style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import 'analysis/inference.dart';
 import 'analysis/movement_analyzer.dart';
+import 'demo/challenges.dart';
 import 'detection/motion_detector.dart';
 import 'models/landmark.dart';
 
@@ -33,6 +34,10 @@ class SessionController extends ChangeNotifier {
   String? error;
   AnalysisResult result = const AnalysisResult();
   final List<MovementEvent> log = [];
+  final tracker = ChallengeTracker();
+
+  /// Presenter toggle: show model stats, backend names and the activity log.
+  bool showDetails = false;
   double fps = 0;
   double inferenceMs = 0;
   FaceFrame? face;
@@ -71,12 +76,23 @@ class SessionController extends ChangeNotifier {
     _sub = null;
     await detector.stop();
     analyzer.reset();
+    tracker.reset();
     _prevIds = {};
     frame.value = null;
     result = const AnalysisResult();
     face = null;
     fps = 0;
     status = SessionStatus.idle;
+    notifyListeners();
+  }
+
+  void setShowDetails(bool v) {
+    showDetails = v;
+    notifyListeners();
+  }
+
+  void resetChallenges() {
+    tracker.reset();
     notifyListeners();
   }
 
@@ -112,7 +128,7 @@ class SessionController extends ChangeNotifier {
         ..start();
     }
 
-    var logChanged = false;
+    var logChanged = tracker.update(r);
     for (final e in r.newEvents) {
       log.insert(0, e);
       logChanged = true;

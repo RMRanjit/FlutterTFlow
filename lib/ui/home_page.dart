@@ -22,12 +22,22 @@ class HomePage extends StatelessWidget {
         actions: [
           ListenableBuilder(
             listenable: session,
-            builder: (context, _) => session.running
-                ? Padding(
+            builder: (context, _) => Row(
+              children: [
+                IconButton(
+                  tooltip: session.showDetails ? 'Hide technical details' : 'Show technical details',
+                  isSelected: session.showDetails,
+                  icon: const Icon(Icons.insights_outlined),
+                  selectedIcon: const Icon(Icons.insights),
+                  onPressed: () => session.setShowDetails(!session.showDetails),
+                ),
+                if (session.running)
+                  Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: TextButton.icon(onPressed: session.stop, icon: const Icon(Icons.stop_circle_outlined), label: const Text('Stop')),
-                  )
-                : const SizedBox.shrink(),
+                  ),
+              ],
+            ),
           ),
         ],
       ),

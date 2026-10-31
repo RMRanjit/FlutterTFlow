@@ -126,7 +126,7 @@ class MovementAnalyzer {
     void fire(String id, String label, {Severity severity = Severity.info}) {
       if ((_cooldownUntil[id] ?? 0) > t) return;
       _cooldownUntil[id] = t + config.eventCooldownMs;
-      events.add(MovementEvent(_clock(), label, severity: severity));
+      events.add(MovementEvent(_clock(), label, severity: severity, id: id));
     }
 
     // ---- Posture ---------------------------------------------------------
@@ -139,7 +139,7 @@ class MovementAnalyzer {
     if (stance != null) {
       state('stance_${stance.$1}', true, () => Inference(InferenceKind.posture, 'stance_${stance.$1}', stance.$1, detail: stance.$2));
     } else {
-      state('upper_only', true, () => const Inference(InferenceKind.posture, 'upper_only', 'Upper body in view', detail: 'Hips/legs out of view'));
+      state('upper_only', true, () => const Inference(InferenceKind.posture, 'upper_only', 'Upper body in view'));
     }
 
     final neckRatio = (mid.y - pn.y) / sw;
@@ -271,7 +271,7 @@ class MovementAnalyzer {
     state('sedentary', sedentary, () => Inference(InferenceKind.wellbeing, 'sedentary', 'Time to stretch', detail: 'Barely moved for ${stillFor.round()}s', severity: Severity.warning));
     if (sedentary && !_stretchAlerted) {
       _stretchAlerted = true;
-      events.add(MovementEvent(_clock(), 'Sedentary for ${config.sedentarySeconds.round()}s – suggest a stretch', severity: Severity.warning));
+      events.add(MovementEvent(_clock(), id: 'sedentary', 'Sedentary for ${config.sedentarySeconds.round()}s – suggest a stretch', severity: Severity.warning));
     }
 
     final pose = f.pose;

@@ -6,7 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:movement_poc/app.dart';
 import 'package:movement_poc/detection/motion_detector.dart';
 import 'package:movement_poc/models/landmark.dart';
+import 'package:movement_poc/ui/camera_view.dart';
 import 'package:movement_poc/ui/home_page.dart';
+import 'package:movement_poc/ui/insights_panel.dart';
 
 class FakeDetector implements MotionDetector {
   FakeDetector({this.failWith});
@@ -78,7 +80,18 @@ void main() {
     }
     expect(find.textContaining('Right hand raised'), findsWidgets);
     expect(find.text('Calibrate posture'), findsOneWidget);
+
+    // The raised hand ticks off the first challenge for the audience.
+    expect(find.textContaining('Try these in front of the camera  (1/8)'), findsOneWidget);
+
+    // Technical details are hidden until the presenter asks for them.
+    expect(find.text('Fake · test'), findsNothing);
+    expect(find.text('Model stats'), findsNothing);
+    await tester.tap(find.byTooltip('Show technical details'));
+    await tester.pump();
     expect(find.text('Fake · test'), findsWidgets);
+    await tester.scrollUntilVisible(find.text('Model stats'), 300, scrollable: find.descendant(of: find.byType(InsightsPanel), matching: find.byType(Scrollable)));
+    expect(find.text('Model stats'), findsOneWidget);
 
     await tester.tap(find.text('Stop'));
     await tester.pump();
@@ -100,35 +113,36 @@ void main() {
   });
 
   group('responsive layout', () {
-    Future<(Offset, Offset)> positions(WidgetTester tester, Size size) async {
+    /// (camera bounds, insights bounds) with no layout exceptions.
+    Future<(Rect, Rect)> bounds(WidgetTester tester, Size size) async {
       await pumpAt(tester, size, FakeDetector());
       expect(tester.takeException(), isNull);
-      return (tester.getTopLeft(find.text('Start camera')), tester.getTopLeft(find.text('Start the camera to see live inferences. Everything is computed on this device.')));
+      return (tester.getRect(find.byType(CameraView)), tester.getRect(find.byType(InsightsPanel)));
     }
 
     testWidgets('desktop web: camera and insights side by side', (tester) async {
-      final (cam, panel) = await positions(tester, const Size(1440, 900));
-      expect(panel.dx, greaterThan(cam.dx));
+      final (cam, panel) = await bounds(tester, const Size(1440, 900));
+      expect(panel.left, greaterThanOrEqualTo(cam.right));
     });
 
     testWidgets('tablet landscape: side by side', (tester) async {
-      final (cam, panel) = await positions(tester, const Size(1024, 768));
-      expect(panel.dx, greaterThan(cam.dx));
+      final (cam, panel) = await bounds(tester, const Size(1024, 768));
+      expect(panel.left, greaterThanOrEqualTo(cam.right));
     });
 
     testWidgets('tablet portrait: stacked', (tester) async {
-      final (cam, panel) = await positions(tester, const Size(800, 1280));
-      expect(panel.dy, greaterThan(cam.dy));
+      final (cam, panel) = await bounds(tester, const Size(800, 1280));
+      expect(panel.top, greaterThanOrEqualTo(cam.bottom));
     });
 
     testWidgets('phone portrait: stacked, no overflow', (tester) async {
-      final (cam, panel) = await positions(tester, const Size(390, 844));
-      expect(panel.dy, greaterThan(cam.dy));
+      final (cam, panel) = await bounds(tester, const Size(390, 844));
+      expect(panel.top, greaterThanOrEqualTo(cam.bottom));
     });
 
     testWidgets('small phone landscape: side by side, no overflow', (tester) async {
-      final (cam, panel) = await positions(tester, const Size(740, 360));
-      expect(panel.dx, greaterThan(cam.dx));
+      final (cam, panel) = await bounds(tester, const Size(740, 360));
+      expect(panel.left, greaterThanOrEqualTo(cam.right));
     });
 
     test('breakpoint rules', () {

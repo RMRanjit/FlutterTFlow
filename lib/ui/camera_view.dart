@@ -30,7 +30,7 @@ class CameraView extends StatelessWidget {
                 return _Message(
                   icon: Icons.accessibility_new,
                   title: 'Movement Insights',
-                  body: 'Detects face and body movement on-device with TensorFlow Lite and explains what it sees. Video never leaves your device.',
+                  body: 'Uses your camera to understand how you move — posture, gestures and expressions — and explains what it sees in plain language. Everything happens on this device; no video is recorded or uploaded.',
                   action: FilledButton.icon(onPressed: session.start, icon: const Icon(Icons.videocam), label: const Text('Start camera')),
                 );
             }
@@ -61,11 +61,8 @@ class _Live extends StatelessWidget {
               IgnorePointer(
                 child: CustomPaint(painter: SkeletonPainter(frame: session.frame, mirrored: detector.mirrored)),
               ),
-              Positioned(
-                left: 12,
-                bottom: 12,
-                child: _Badge(text: detector.backendName),
-              ),
+              if (session.showDetails)
+                Positioned(left: 12, bottom: 12, child: _Badge(text: detector.backendName)),
               if (!session.result.personVisible)
                 const Align(
                   alignment: Alignment.topCenter,
